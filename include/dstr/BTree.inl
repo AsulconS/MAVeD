@@ -1,6 +1,6 @@
 /********************************************************************************
  *                                                                              *
- * MADB (MilAnverDB)                                                            *
+ * MAVeD - MilanverDatabase                                                     *
  * Copyright (c) 2020 Adrian Bedregal (AsulconS)                                *
  *                                                                              *
  * This software is provided 'as-is', without any express or implied            *

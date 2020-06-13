@@ -28,12 +28,14 @@
 #include <core/utils.hpp>
 #include <core/attachedPair.hpp>
 
-#define sizeof_BTNRelevantData(T, N) offsetof(unparentheses_type((BTreeNode<T, N>)), children)
+#include <string>
+
+#define sizeof_BTNRelevantData(T, N) offsetof(unparentheses_type((Node<T, N>)), children)
 
 namespace mav
 {
 template <typename T, int N>
-struct BTreeNode
+struct Node
 {
 public:
     // Relevant Data
@@ -47,25 +49,12 @@ public:
     bool isLeaf;
     // -------------
 
-    BTreeNode<T, N>* children[N];
+    Node<T, N>* children[N];
     std::string label;
 };
 
-template <typename T, int N>
-inline void operator>>(BTreeNode<T, N>& node, const std::size_t index)
-{
-    for(std::size_t i = node.size + 1; i > index + 1; --i)
-    {
-        node.children[i] = node.children[i - 1];
-        node.childrenIndices[i] = node.childrenIndices[i - 1];
-    }
-    for(std::size_t i = node.size; i > index; --i)
-    {
-        node.data[i] = node.data[i - 1];
-    }
-    ++node.size;
-}
-
 } // namespace mav
+
+#include <core/node.inl>
 
 #endif // MAVeD_NODE_HPP

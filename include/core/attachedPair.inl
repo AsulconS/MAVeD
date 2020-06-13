@@ -21,23 +21,30 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_ATTACHED_PAIR_HPP
-#define MAVeD_ATTACHED_PAIR_HPP
-
-#include <core/common.hpp>
-
 namespace mav
 {
 template <typename T>
-struct AttachedPair
+inline bool operator==(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
 {
-public:
-    int pk;
-    T body;
-};
+    return (apl.pk == apr.pk) && (apl.body == apr.body);
+}
+
+template <typename T>
+inline bool operator!=(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
+{
+    return (apl.pk != apr.pk) || (apl.body != apr.body);
+}
+
+template <typename T>
+inline bool operator<(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
+{
+    return apl.pk < apr.pk;
+}
+
+template <typename T>
+inline bool operator>(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
+{
+    return apl.pk > apr.pk;
+}
 
 } // namespace mav
-
-#include <core/attachedPair.inl>
-
-#endif // MAVeD_ATTACHED_PAIR_HPP

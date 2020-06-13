@@ -60,8 +60,8 @@ private:
     void realloc();
 };
 
-#include <dstr/stack.inl>
-
 } // namspace mav
+
+#include <dstr/stack.inl>
 
 #endif // MAVeD_STACK_HPP

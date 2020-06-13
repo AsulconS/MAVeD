@@ -21,23 +21,21 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_ATTACHED_PAIR_HPP
-#define MAVeD_ATTACHED_PAIR_HPP
-
-#include <core/common.hpp>
-
 namespace mav
 {
-template <typename T>
-struct AttachedPair
+template <typename T, int N>
+inline void operator>>(Node<T, N>& node, const std::size_t index)
 {
-public:
-    int pk;
-    T body;
-};
+    for(std::size_t i = node.size + 1; i > index + 1; --i)
+    {
+        node.children[i] = node.children[i - 1];
+        node.childrenIndices[i] = node.childrenIndices[i - 1];
+    }
+    for(std::size_t i = node.size; i > index; --i)
+    {
+        node.data[i] = node.data[i - 1];
+    }
+    ++node.size;
+}
 
 } // namespace mav
-
-#include <core/attachedPair.inl>
-
-#endif // MAVeD_ATTACHED_PAIR_HPP

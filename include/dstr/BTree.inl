@@ -21,6 +21,8 @@
  *                                                                              *
  ********************************************************************************/
 
+namespace mav
+{
 template <typename T, int N>
 inline BTree<T, N>::BTree()
     : m_root       {nullptr},
@@ -43,7 +45,7 @@ inline BTree<T, N>::BTree()
 }
 
 template <typename T, int N>
-inline BTree<T, N>::BTree(Node* t_root)
+inline BTree<T, N>::BTree(BNode* t_root)
     : m_root       {t_root},
       m_lockPhase  {true},
       m_nextIndex  {sizeof(std::size_t)},
@@ -114,7 +116,7 @@ inline void BTree<T, N>::makeEmpty()
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::makeEmpty(Node* root)
+inline void BTree<T, N>::makeEmpty(BNode* root)
 {
     if(root == nullptr)
     {
@@ -137,13 +139,13 @@ inline void BTree<T, N>::makeEmpty(Node* root)
 }
 
 template <typename T, int N>
-inline BTreeNode<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, int& index)
+inline Node<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, int& index)
 {
     return find(value, m_root, index);
 }
 
 template <typename T, int N>
-inline BTreeNode<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, Node*& root, int& index)
+inline Node<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, BNode*& root, int& index)
 {
     if(root == nullptr)
     {
@@ -156,13 +158,13 @@ inline BTreeNode<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, Node*& r
     if(i < root->size && value == root->data[i])
     {
         index = i;
-        std::cout << '\"' << std::to_string(value) << '\"' << " found at DRA: 0x" << std::hex << std::uppercase << root->index << std::endl;
+        std::cout << '\"' << toString(value) << '\"' << " found at DRA: 0x" << std::hex << std::uppercase << root->index << std::endl;
         return root;
     }
     else if(root->isLeaf)
     {
         index = -1;
-        std::cout << '\"' << std::to_string(value) << '\"' << " not found. Index set as -1. Aborting" << std::endl;
+        std::cout << '\"' << toString(value) << '\"' << " not found. Index set as -1. Aborting" << std::endl;
         return nullptr;
     }
     else
@@ -186,11 +188,11 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, Node*& root)
+inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, BNode*& root)
 {
     if(root == nullptr)
     {
-        root = new Node { {value}, 1, allocate(), {}, true, {}, "" };
+        root = new BNode { {value}, 1, allocate(), {}, true, {}, "" };
         diskWrite(root);
         setRootIndex(root->index);
         labelNode(root);
@@ -199,7 +201,7 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, Node*& root)
 
     if(root->size >= N - 1)
     {
-        Node* newRoot = new Node { {}, 0, allocate(), {root->index}, false, {root}, "" };
+        BNode* newRoot = new BNode { {}, 0, allocate(), {root->index}, false, {root}, "" };
         root = newRoot;
         setRootIndex(root->index);
         splitChild(root, 0);
@@ -212,7 +214,7 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, Node*& root)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::updateKey(const Node* node)
+inline void BTree<T, N>::updateKey(const BNode* node)
 {
     if(node != nullptr)
     {
@@ -241,7 +243,7 @@ inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value, Node*& root)
+inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value, BNode*& root)
 {
     //
 }
@@ -253,7 +255,7 @@ inline void BTree<T, N>::loadAll()
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::loadAll(Node*& root)
+inline void BTree<T, N>::loadAll(BNode*& root)
 {
     if(root == nullptr)
     {
@@ -279,7 +281,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
         return;
     }
 
-    std::string fn {thisName() + std::to_string(m_filesCount++) + ".dot"};
+    std::string fn {thisName() + toString(m_filesCount++) + ".dot"};
     std::fstream of;
     of.open(fn, std::ios::out | std::ios::binary);
 
@@ -321,12 +323,12 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
         "    // --------------------------------------------------------------------------------\r\n"
     };
 
-    Node* root {m_root};
-    labels += "    cd" + std::to_string(root->data[0].pk);
+    BNode* root {m_root};
+    labels += "    cd" + toString(root->data[0].pk);
     labels += " [ " + root->label + " ];\r\n";
     labels += "\r\n";
 
-    Stack<Node*> stack;
+    Stack<BNode*> stack;
     stack.push(root);
     while(!stack.empty())
     {
@@ -334,7 +336,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
         if(root != nullptr && !root->isLeaf)
         {
             // --------------------------------------------------------------------
-            std::string parentLabel { "cd" + std::to_string(root->data[0].pk) };
+            std::string parentLabel { "cd" + toString(root->data[0].pk) };
             for(std::size_t i = 0; i < root->size + 1; ++i)
             {
                 if(isFinal)
@@ -345,10 +347,10 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
                 if(root->children[i] != nullptr)
                 {
                     labelNode(root->children[i]);
-                    std::string childLabel = "cd"  + std::to_string(root->children[i]->data[0].pk);
+                    std::string childLabel = "cd"  + toString(root->children[i]->data[0].pk);
                     labels += "    " + childLabel + " [ " + root->children[i]->label + " ];\r\n";
                     relations += "    ";
-                    relations += '\"' + parentLabel + "\":c" + std::to_string(i) + " -- ";
+                    relations += '\"' + parentLabel + "\":c" + toString(i) + " -- ";
                     relations += '\"' + childLabel + "\";\r\n";
                     stack.push(root->children[i]);
                 }
@@ -363,7 +365,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::labelNode(Node* node)
+inline void BTree<T, N>::labelNode(BNode* node)
 {
     if(node != nullptr)
     {
@@ -372,21 +374,21 @@ inline void BTree<T, N>::labelNode(Node* node)
         std::string label { "label = \"{ DRA: 0x" + ss.str() + " | {" };
         for(std::size_t i = 0; i < node->size; ++i)
         {
-            label += " <c" + std::to_string(i) + "> | "
-                           + std::to_string(node->data[i]) + " |";
+            label += " <c" + toString(i) + "> | "
+                           + toString(node->data[i]) + " |";
         }
-        label += " <c" + std::to_string(node->size) + "> } }\"";
+        label += " <c" + toString(node->size) + "> } }\"";
         node->label = std::move(label);
     }
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::splitChild(Node* node, const std::size_t index)
+inline void BTree<T, N>::splitChild(BNode* node, const std::size_t index)
 {
     std::size_t middle = std::ceil(static_cast<float>(N) / 2.0f) - 1;
 
-    Node* y = node->children[index];
-    Node* z = new Node { {}, N - (middle + 2), allocate(), {}, y->isLeaf, {}, "" };
+    BNode* y = node->children[index];
+    BNode* z = new BNode { {}, N - (middle + 2), allocate(), {}, y->isLeaf, {}, "" };
 
     for(std::size_t i = 0; i < z->size; ++i)
     {
@@ -418,7 +420,7 @@ inline void BTree<T, N>::splitChild(Node* node, const std::size_t index)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::insertKeyNonFull(const AttachedPair<T>& value, Node*& root)
+inline void BTree<T, N>::insertKeyNonFull(const AttachedPair<T>& value, BNode*& root)
 {
     int i = root->size - 1;
     for(std::size_t j = 0; j < root->size; ++j)
@@ -520,7 +522,7 @@ inline void BTree<T, N>::createFileIfNotExists()
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::diskWrite(const Node* node)
+inline void BTree<T, N>::diskWrite(const BNode* node)
 {
     const char* buffer = reinterpret_cast<const char*>(node);
 
@@ -529,9 +531,9 @@ inline void BTree<T, N>::diskWrite(const Node* node)
 }
 
 template <typename T, int N>
-inline void BTree<T, N>::diskRead(Node*& node, const std::size_t index)
+inline void BTree<T, N>::diskRead(BNode*& node, const std::size_t index)
 {
-    node = new Node { {}, 0, 0, {}, true, {}, "" };
+    node = new BNode { {}, 0, 0, {}, true, {}, "" };
     char* buffer = reinterpret_cast<char*>(node);
 
     m_file.seekg(index, std::ios::beg);
@@ -580,3 +582,5 @@ inline void BTree<T, N>::setTransactionState(const char state)
     m_flagsFile.seekp(0, std::ios::beg);
     m_flagsFile.write(&state, sizeof(char));
 }
+
+} // namespace mav

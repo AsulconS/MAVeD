@@ -21,23 +21,18 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_ATTACHED_PAIR_HPP
-#define MAVeD_ATTACHED_PAIR_HPP
-
-#include <core/common.hpp>
-
 namespace mav
 {
 template <typename T>
-struct AttachedPair
+inline std::string toString(const T& val)
 {
-public:
-    int pk;
-    T body;
-};
+    return std::to_string(val);
+}
+
+template <typename T>
+inline std::string toString(const AttachedPair<T>& ap)
+{
+    return std::to_string(ap.pk) + ": " + std::to_string(ap.body);
+}
 
 } // namespace mav
-
-#include <core/attachedPair.inl>
-
-#endif // MAVeD_ATTACHED_PAIR_HPP

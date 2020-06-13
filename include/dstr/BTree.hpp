@@ -24,44 +24,50 @@
 #ifndef MAVeD_BTREE_HPP
 #define MAVeD_BTREE_HPP
 
-#include <fstream>
+#include <core/common.hpp>
+#include <core/attachedPair.hpp>
+#include <core/node.hpp>
+#include <core/strCast.hpp>
+
+#include <dstr/stack.hpp>
 
 #include <queue>
 #include <unordered_map>
 
-#include <core/node.hpp>
-#include <dstr/stack.hpp>
+#include <string>
+#include <fstream>
+#include <iostream>
 
 namespace mav
 {
 template <typename T, int N>
 class BTree
 {
-    using Node = BTreeNode<T, N>;
+    using BNode = Node<T, N>;
 
 public:
     BTree();
-    BTree(Node* t_root);
+    BTree(BNode* t_root);
     BTree(const std::vector<AttachedPair<T>>& data);
     BTree(const std::initializer_list<AttachedPair<T>>& l);
     virtual ~BTree();
 
     void makeEmpty();
-    void makeEmpty(Node* root);
+    void makeEmpty(BNode* root);
 
-    virtual Node* find(const AttachedPair<T>& value, int& index);
-    virtual Node* find(const AttachedPair<T>& value, Node*& root, int& index);
+    virtual BNode* find(const AttachedPair<T>& value, int& index);
+    virtual BNode* find(const AttachedPair<T>& value, BNode*& root, int& index);
 
     virtual void insertKey(const AttachedPair<T>& value);
-    virtual void insertKey(const AttachedPair<T>& value, Node*& root);
+    virtual void insertKey(const AttachedPair<T>& value, BNode*& root);
 
-    virtual void updateKey(const Node* node);
+    virtual void updateKey(const BNode* node);
 
     virtual void deleteKey(const AttachedPair<T>& value);
-    virtual void deleteKey(const AttachedPair<T>& value, Node*& root);
+    virtual void deleteKey(const AttachedPair<T>& value, BNode*& root);
 
     void loadAll();
-    void loadAll(Node*& root);
+    void loadAll(BNode*& root);
 
     void exportToFile(const std::string& title, bool isFinal = false);
 
@@ -70,16 +76,16 @@ public:
     static uint32 getFilesCount() { return m_filesCount; };
 
 protected:
-    virtual void labelNode(Node* node);
+    virtual void labelNode(BNode* node);
 
-    void splitChild(Node* node, const std::size_t index);
-    void insertKeyNonFull(const AttachedPair<T>& value, Node*& root);
+    void splitChild(BNode* node, const std::size_t index);
+    void insertKeyNonFull(const AttachedPair<T>& value, BNode*& root);
 
     void clearFile();
     void createFileIfNotExists();
 
-    void diskWrite(const Node* node);
-    void diskRead(Node*& node, const std::size_t index);
+    void diskWrite(const BNode* node);
+    void diskRead(BNode*& node, const std::size_t index);
 
     std::size_t allocate();
     std::size_t getRootIndex();
@@ -87,8 +93,8 @@ protected:
     void setRootIndex(const std::size_t index);
     void setTransactionState(const char state);
 
-    Node* m_root;
-    Stack<Node*> m_nodes;
+    BNode* m_root;
+    Stack<BNode*> m_nodes;
     std::fstream m_file;
     std::fstream m_bkFile;
     std::fstream m_flagsFile;
@@ -107,8 +113,8 @@ private:
     constexpr const char* thisName() { return "BTree"; };
 };
 
-#include <dstr/BTree.inl>
-
 } // namespace mav
+
+#include <dstr/BTree.inl>
 
 #endif // MAVeD_BTREE_HPP

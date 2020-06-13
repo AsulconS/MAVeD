@@ -21,10 +21,9 @@
  *                                                                              *
  ********************************************************************************/
 
-#include <random>
-#include <iostream>
-
 #include <maved.hpp>
+
+#include <random>
 
 int main()
 {

@@ -25,11 +25,10 @@
 #define MAVeD_HPP
 
 #include <core/common.hpp>
-#include <core/utils.hpp>
 #include <core/attachedPair.hpp>
 #include <core/node.hpp>
+#include <core/strCast.hpp>
 
-#include <dstr/stack.hpp>
 #include <dstr/BTree.hpp>
 
 #endif // MAVeD_HPP

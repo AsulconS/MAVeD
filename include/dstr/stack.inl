@@ -21,6 +21,8 @@
  *                                                                              *
  ********************************************************************************/
 
+namespace mav
+{
 template <typename T>
 inline Stack<T>::Stack()
     : m_size     {0},
@@ -106,8 +108,10 @@ inline void Stack<T>::realloc()
 {
     m_capacity <<= 1;
     T* data = new T[m_capacity];
-    for(size_t i = 0; i < m_size; ++i)
+    for(int i = 0; i < m_size; ++i)
         data[i] = m_data[i];
     delete[] m_data;
     m_data = data;
 }
+
+} // namespace mav

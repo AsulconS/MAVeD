@@ -25,6 +25,8 @@
 #define MAVeD_BTREE_HPP
 
 #include <core/common.hpp>
+#include <core/time.hpp>
+
 #include <core/attachedPair.hpp>
 #include <core/node.hpp>
 #include <core/strCast.hpp>

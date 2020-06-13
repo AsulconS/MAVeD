@@ -21,17 +21,32 @@
  *                                                                              *
  ********************************************************************************/
 
-#include <maved.hpp>
+#include <core/time.hpp>
 
-int main()
+namespace mav
 {
-    mav::BTree<int, 4> bTree {};
-
-    int index {};
-    bTree.find({361, 18}, index);
-
-    bTree.exportToFile("Path B-Tree");
-    bTree.exportToFile("Final B-Tree", true);
-
-    return 0;
+Timestamp::Timestamp()
+    : m_timestampStr {}
+{
 }
+
+Timestamp::~Timestamp()
+{
+}
+
+void Timestamp::stamp()
+{
+    std::chrono::time_point<std::chrono::system_clock> now {std::chrono::system_clock::now()};
+    std::time_t in_time_t {std::chrono::system_clock::to_time_t(now)};
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+    m_timestampStr = ss.str();
+}
+
+const std::string& Timestamp::str()
+{
+    return m_timestampStr;
+}
+
+} // namespace mav

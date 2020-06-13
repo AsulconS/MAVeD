@@ -1,7 +1,10 @@
 .vscode/
 legacy/
-*.exe
+
 *.dot
+*.png
+
 *.bat
 *.obj
-*.png
+*.lib
+*.exe

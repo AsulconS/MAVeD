@@ -21,17 +21,29 @@
  *                                                                              *
  ********************************************************************************/
 
-#include <maved.hpp>
+#ifndef MAVeD_TIME_HPP
+#define MAVeD_TIME_HPP
 
-int main()
+#include <ctime>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+
+namespace mav
 {
-    mav::BTree<int, 4> bTree {};
+class Timestamp
+{
+public:
+    Timestamp();
+    virtual ~Timestamp();
 
-    int index {};
-    bTree.find({361, 18}, index);
+    void stamp();
+    const std::string& str();
 
-    bTree.exportToFile("Path B-Tree");
-    bTree.exportToFile("Final B-Tree", true);
+private:
+    std::string m_timestampStr;
+};
 
-    return 0;
-}
+} // namespace mav
+
+#endif // MAVeD_TIME_HPP

@@ -285,6 +285,24 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
     std::fstream of;
     of.open(fn, std::ios::out | std::ios::binary);
 
+    Timestamp now;
+    now.stamp();
+
+    std::string header0
+    {
+        "/********************************************************************************\r\n"
+        " * MAVeD - MilanverDatabase                                                     *\r\n"
+        " * Copyright (c) 2020 Adrian Bedregal (AsulconS)                                *\r\n"
+        " *                                                                              *\r\n"
+        " * Generated at                                                                 *\r\n"
+        "********************************************************************************/\r\n"
+        "\r\n"
+    };
+    for(int i = 0; i < now.str().size(); ++i)
+    {
+        header0[348 + i] = now.str()[i];
+    }
+
     std::string header1
     {
         "graph IBST\r\n"
@@ -309,7 +327,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
         "    // --------------------------------------------------------------------------------\r\n"
     };
 
-    std::string header {header1 + header2};
+    std::string header {header0 + header1 + header2};
 
     std::string labels
     {

@@ -484,7 +484,7 @@ inline void BTree<T, N>::clearFile()
     m_file.open("data/data.bt", std::ios::out | std::ios::binary | std::ios::trunc);
     m_file.close();
 
-    m_bkFile.open("data/data.bt", std::ios::out | std::ios::binary | std::ios::trunc);
+    m_bkFile.open("data/dataBK.bt", std::ios::out | std::ios::binary | std::ios::trunc);
     m_bkFile.close();
 }
 

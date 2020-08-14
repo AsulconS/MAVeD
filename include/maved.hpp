@@ -26,6 +26,7 @@
 
 #include <core/common.hpp>
 #include <core/attachedPair.hpp>
+#include <core/placeholder.hpp>
 #include <core/node.hpp>
 #include <core/strCast.hpp>
 

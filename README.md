@@ -35,7 +35,7 @@ It's important to know that it just works for Win64 Operative Systems at the mom
 
 ## Authors
 
-* **Adrian Rolando Bedregal Vento** - *Initial work* - [PurpleBooth](https://github.com/AsulconS)
+* **Adrian Rolando Bedregal Vento** - *Initial work* - [AsulconS](https://github.com/AsulconS)
 
 ## License
 

@@ -25,6 +25,7 @@
 #define MAVeD_STR_CAST_HPP
 
 #include <core/attachedPair.hpp>
+#include <internal/record.hpp>
 
 #include <string>
 

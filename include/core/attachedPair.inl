@@ -26,13 +26,13 @@ namespace mav
 template <typename T>
 inline bool operator==(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
 {
-    return (apl.pk == apr.pk) && (apl.body == apr.body);
+    return apl.pk == apr.pk;
 }
 
 template <typename T>
 inline bool operator!=(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
 {
-    return (apl.pk != apr.pk) || (apl.body != apr.body);
+    return apl.pk != apr.pk;
 }
 
 template <typename T>
@@ -45,6 +45,18 @@ template <typename T>
 inline bool operator>(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
 {
     return apl.pk > apr.pk;
+}
+
+template <typename T>
+inline bool operator<=(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
+{
+    return apl.pk <= apr.pk;
+}
+
+template <typename T>
+inline bool operator>=(const AttachedPair<T>& apl, const AttachedPair<T>& apr)
+{
+    return apl.pk >= apr.pk;
 }
 
 } // namespace mav

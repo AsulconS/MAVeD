@@ -23,11 +23,11 @@
 
 namespace mav
 {
-template <typename T, int N>
-inline BTree<T, N>::BTree()
+template <typename PKT, int BTreeOrder>
+inline Table<PKT, BTreeOrder>::Table()
     : m_root       {nullptr},
+      m_tableDef   {},
       m_lockPhase  {true},
-      m_nextIndex  {sizeof(std::size_t)},
       m_debugMode  {false},
       m_filesCount {0}
 {
@@ -41,14 +41,17 @@ inline BTree<T, N>::BTree()
         std::cout << "Loading Existing Database" << std::endl;
         diskRead(m_root, getRootIndex());
         labelNode(m_root);
+        m_nextIndex = getNextIndex();
+        m_tableDef.recordSize = getRecordSize();
     }
 }
 
-template <typename T, int N>
-inline BTree<T, N>::BTree(BNode* t_root)
+template <typename PKT, int BTreeOrder>
+inline Table<PKT, BTreeOrder>::Table(BNode* t_root, const std::size_t recordSize)
     : m_root       {t_root},
+      m_tableDef   {},
       m_lockPhase  {true},
-      m_nextIndex  {sizeof(std::size_t)},
+      m_nextIndex  {sizeof(std::size_t) * 3},
       m_debugMode  {false},
       m_filesCount {0}
 {
@@ -57,15 +60,18 @@ inline BTree<T, N>::BTree(BNode* t_root)
     m_file.open("data/data.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_bkFile.open("data/dataBK.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_flagsFile.open("data/flags.meta", std::ios::in | std::ios::out | std::ios::binary);
+
+    m_tableDef.recordSize = recordSize;
 
     insertKey(t_root);
 }
 
-template <typename T, int N>
-inline BTree<T, N>::BTree(const std::vector<AttachedPair<T>>& data)
+template <typename PKT, int BTreeOrder>
+inline Table<PKT, BTreeOrder>::Table(const std::vector<AttachedPair<PKT>>& data, const std::size_t recordSize)
     : m_root       {nullptr},
+      m_tableDef   {},
       m_lockPhase  {true},
-      m_nextIndex  {sizeof(std::size_t)},
+      m_nextIndex  {sizeof(std::size_t) * 3},
       m_debugMode  {false},
       m_filesCount {0}
 {
@@ -74,6 +80,8 @@ inline BTree<T, N>::BTree(const std::vector<AttachedPair<T>>& data)
     m_file.open("data/data.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_bkFile.open("data/dataBK.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_flagsFile.open("data/flags.meta", std::ios::in | std::ios::out | std::ios::binary);
+
+    m_tableDef.recordSize = recordSize;
 
     for(const auto& v : data)
     {
@@ -81,11 +89,12 @@ inline BTree<T, N>::BTree(const std::vector<AttachedPair<T>>& data)
     }
 }
 
-template <typename T, int N>
-inline BTree<T, N>::BTree(const std::initializer_list<AttachedPair<T>>& l)
+template <typename PKT, int BTreeOrder>
+inline Table<PKT, BTreeOrder>::Table(const std::initializer_list<AttachedPair<PKT>>& l, const std::size_t recordSize)
     : m_root       {nullptr},
+      m_tableDef   {},
       m_lockPhase  {true},
-      m_nextIndex  {sizeof(std::size_t)},
+      m_nextIndex  {sizeof(std::size_t) * 3},
       m_debugMode  {false},
       m_filesCount {0}
 {
@@ -95,28 +104,30 @@ inline BTree<T, N>::BTree(const std::initializer_list<AttachedPair<T>>& l)
     m_bkFile.open("data/dataBK.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_flagsFile.open("data/flags.meta", std::ios::in | std::ios::out | std::ios::binary);
 
+    m_tableDef.recordSize = recordSize;
+
     for(const auto& v : l)
     {
         insertKey(v);
     }
 }
 
-template <typename T, int N>
-inline BTree<T, N>::~BTree()
+template <typename PKT, int BTreeOrder>
+inline Table<PKT, BTreeOrder>::~Table()
 {
     makeEmpty();
-    std::cout << "Memory-Loaded BTree destroyed successfully" << std::endl;
+    std::cout << "Memory-Loaded Table destroyed successfully" << std::endl;
     m_file.close();
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::makeEmpty()
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::makeEmpty()
 {
     makeEmpty(m_root);
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::makeEmpty(BNode* root)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::makeEmpty(BNode* root)
 {
     if(root == nullptr)
     {
@@ -125,6 +136,10 @@ inline void BTree<T, N>::makeEmpty(BNode* root)
 
     if(root->isLeaf)
     {
+        for(std::size_t i = 0; i < root->size; ++i)
+        {
+            delete root->data[i].body.data;
+        }
         delete root;
         return;
     }
@@ -138,14 +153,14 @@ inline void BTree<T, N>::makeEmpty(BNode* root)
     }
 }
 
-template <typename T, int N>
-inline Node<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, int& index)
+template <typename PKT, int BTreeOrder>
+inline Node<PKT, BTreeOrder>* Table<PKT, BTreeOrder>::find(const AttachedPair<PKT>& value, int& index)
 {
     return find(value, m_root, index);
 }
 
-template <typename T, int N>
-inline Node<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, BNode*& root, int& index)
+template <typename PKT, int BTreeOrder>
+inline Node<PKT, BTreeOrder>* Table<PKT, BTreeOrder>::find(const AttachedPair<PKT>& value, BNode*& root, int& index)
 {
     if(root == nullptr)
     {
@@ -174,8 +189,8 @@ inline Node<T, N>* BTree<T, N>::find(const AttachedPair<T>& value, BNode*& root,
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::insertKey(const AttachedPair<T>& value)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::insertKey(const AttachedPair<PKT>& value)
 {
     setTransactionState(1);
         m_writeTarget = &m_file;
@@ -187,8 +202,8 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value)
         m_writeTarget = nullptr;
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, BNode*& root)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::insertKey(const AttachedPair<PKT>& value, BNode*& root)
 {
     if(root == nullptr)
     {
@@ -199,7 +214,7 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, BNode*& root)
         return;
     }
 
-    if(root->size >= N - 1)
+    if(root->size >= BTreeOrder - 1)
     {
         BNode* newRoot = new BNode { {}, 0, allocate(), {root->index}, false, {root}, "" };
         root = newRoot;
@@ -213,8 +228,8 @@ inline void BTree<T, N>::insertKey(const AttachedPair<T>& value, BNode*& root)
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::updateKey(const BNode* node)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::updateKey(const BNode* node)
 {
     if(node != nullptr)
     {
@@ -229,8 +244,8 @@ inline void BTree<T, N>::updateKey(const BNode* node)
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::deleteKey(const AttachedPair<PKT>& value)
 {
     setTransactionState(1);
         m_writeTarget = &m_file;
@@ -242,20 +257,19 @@ inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value)
         m_writeTarget = nullptr;
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::deleteKey(const AttachedPair<T>& value, BNode*& root)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::deleteKey(const AttachedPair<PKT>& value, BNode*& root)
 {
-    //
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::loadAll()
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::loadAll()
 {
     loadAll(m_root);
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::loadAll(BNode*& root)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::loadAll(BNode*& root)
 {
     if(root == nullptr)
     {
@@ -273,8 +287,8 @@ inline void BTree<T, N>::loadAll(BNode*& root)
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::exportToFile(const std::string& title, bool isFinal)
 {
     if(m_root == nullptr)
     {
@@ -317,7 +331,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
     std::string header2
     {
         "\r\n"
-        "    // Binary Search Tree Properties\r\n"
+        "    // Table Binary Search Tree Properties\r\n"
         "    // --------------------------------------------------------------------------------\r\n"
         "    graph [ dpi = 300, nodesep = 0.25, ranksep = 0.5, splines = line, margin = 0.25 ];\r\n"
         "    node  [ fontname = \"Bitstream Vera Sans\",\r\n"
@@ -365,7 +379,7 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
                 if(root->children[i] != nullptr)
                 {
                     labelNode(root->children[i]);
-                    std::string childLabel = "cd"  + toString(root->children[i]->data[0].pk);
+                    std::string childLabel = "cd" + toString(root->children[i]->data[0].pk);
                     labels += "    " + childLabel + " [ " + root->children[i]->label + " ];\r\n";
                     relations += "    ";
                     relations += '\"' + parentLabel + "\":c" + toString(i) + " -- ";
@@ -382,8 +396,8 @@ inline void BTree<T, N>::exportToFile(const std::string& title, bool isFinal)
     of.close();
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::labelNode(BNode* node)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::labelNode(BNode* node)
 {
     if(node != nullptr)
     {
@@ -393,20 +407,20 @@ inline void BTree<T, N>::labelNode(BNode* node)
         for(std::size_t i = 0; i < node->size; ++i)
         {
             label += " <c" + toString(i) + "> | "
-                           + toString(node->data[i]) + " |";
+                           + toString(node->data[i].pk) + " |";
         }
         label += " <c" + toString(node->size) + "> } }\"";
         node->label = std::move(label);
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::splitChild(BNode* node, const std::size_t index)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::splitChild(BNode* node, const std::size_t index)
 {
-    std::size_t middle = std::ceil(static_cast<float>(N) / 2.0f) - 1;
+    std::size_t middle = std::ceil(static_cast<float>(BTreeOrder) / 2.0f) - 1;
 
     BNode* y = node->children[index];
-    BNode* z = new BNode { {}, N - (middle + 2), allocate(), {}, y->isLeaf, {}, "" };
+    BNode* z = new BNode { {}, BTreeOrder - (middle + 2), allocate(), {}, y->isLeaf, {}, "" };
 
     for(std::size_t i = 0; i < z->size; ++i)
     {
@@ -437,8 +451,8 @@ inline void BTree<T, N>::splitChild(BNode* node, const std::size_t index)
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::insertKeyNonFull(const AttachedPair<T>& value, BNode*& root)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::insertKeyNonFull(const AttachedPair<PKT>& value, BNode*& root)
 {
     int i = root->size - 1;
     for(std::size_t j = 0; j < root->size; ++j)
@@ -466,7 +480,7 @@ inline void BTree<T, N>::insertKeyNonFull(const AttachedPair<T>& value, BNode*& 
         while(i >= 0 && value < root->data[i]) --i;
         ++i;
         diskRead(root->children[i], root->childrenIndices[i]);
-        if(root->children[i]->size >= N - 1)
+        if(root->children[i]->size >= BTreeOrder - 1)
         {
             splitChild(root, i);
             if(value > root->data[i])
@@ -478,8 +492,8 @@ inline void BTree<T, N>::insertKeyNonFull(const AttachedPair<T>& value, BNode*& 
     }
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::clearFile()
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::clearFile()
 {
     m_file.open("data/data.bt", std::ios::out | std::ios::binary | std::ios::trunc);
     m_file.close();
@@ -488,8 +502,8 @@ inline void BTree<T, N>::clearFile()
     m_bkFile.close();
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::createFileIfNotExists()
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::createFileIfNotExists()
 {
     m_file.open("data/data.bt", std::ios::in | std::ios::out | std::ios::binary);
     m_bkFile.open("data/dataBK.bt", std::ios::in | std::ios::out | std::ios::binary);
@@ -539,43 +553,79 @@ inline void BTree<T, N>::createFileIfNotExists()
     m_bkFile.close();
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::diskWrite(const BNode* node)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::diskWrite(const BNode* node)
 {
-    const char* buffer = reinterpret_cast<const char*>(node);
+    const char* buffer {nullptr};
+    std::size_t stride {sizeof(PKT) + m_tableDef.recordSize};
 
-    m_writeTarget->seekp(node->index, std::ios::beg);
-    m_writeTarget->write(buffer, sizeof_BTNRelevantData(T, N));
+    for(std::size_t i = 0; i < node->size; ++i)
+    {
+        buffer = reinterpret_cast<const char*>(&node->data[i].pk);
+        m_writeTarget->seekp(node->index + i * stride, std::ios::beg);
+        m_writeTarget->write(buffer, sizeof(PKT));
+
+        buffer = reinterpret_cast<const char*>(node->data[i].body.data);
+        m_writeTarget->seekp(node->index + i * stride + sizeof(PKT), std::ios::beg);
+        m_writeTarget->write(buffer, m_tableDef.recordSize);
+    }
+    buffer =  reinterpret_cast<const char*>(node);
+    buffer += offsetAs(PKT, BTreeOrder, size);
+
+    m_writeTarget->seekp(node->index + (BTreeOrder - 1) * stride, std::ios::beg);
+    m_writeTarget->write(buffer, offsetAs(PKT, BTreeOrder, children) - offsetAs(PKT, BTreeOrder, size));
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::diskRead(BNode*& node, const std::size_t index)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::diskRead(BNode*& node, const std::size_t index)
 {
+    char* buffer {nullptr};
+    std::size_t stride {sizeof(PKT) + m_tableDef.recordSize};
+
     node = new BNode { {}, 0, 0, {}, true, {}, "" };
-    char* buffer = reinterpret_cast<char*>(node);
 
-    m_file.seekg(index, std::ios::beg);
-    m_file.read(buffer, sizeof_BTNRelevantData(T, N));
+    buffer =  reinterpret_cast<char*>(node);
+    buffer += offsetAs(PKT, BTreeOrder, size);
+
+    m_file.seekg(index + (BTreeOrder - 1) * stride, std::ios::beg);
+    m_file.read(buffer, offsetAs(PKT, BTreeOrder, children) - offsetAs(PKT, BTreeOrder, size));
+
+    for(std::size_t i = 0; i < node->size; ++i)
+    {
+        buffer = reinterpret_cast<char*>(&node->data[i].pk);
+        m_file.seekg(index + i * stride, std::ios::beg);
+        m_file.read(buffer, sizeof(PKT));
+
+        node->data[i].body.data = new char[m_tableDef.recordSize];
+        buffer = node->data[i].body.data;
+        m_file.seekg(index + i * stride + sizeof(PKT), std::ios::beg);
+        m_file.read(buffer, m_tableDef.recordSize);
+    }
 }
 
-template <typename T, int N>
-inline std::size_t BTree<T, N>::allocate()
+template <typename PKT, int BTreeOrder>
+inline std::size_t Table<PKT, BTreeOrder>::allocate()
 {
-    char* buffer = new char[sizeof_BTNRelevantData(T, N)];
+    std::size_t stride {sizeof(PKT) + m_tableDef.recordSize};
+    std::size_t memorySize {((BTreeOrder - 1) * stride) + (offsetAs(PKT, BTreeOrder, children) - offsetAs(PKT, BTreeOrder, size))};
+
+    char* buffer = new char[memorySize];
 
     m_writeTarget->seekp(m_nextIndex, std::ios::beg);
-    m_writeTarget->write(buffer, sizeof_BTNRelevantData(T, N));
+    m_writeTarget->write(buffer, memorySize);
 
     delete[] buffer;
 
     std::size_t index {m_nextIndex};
-    m_nextIndex += sizeof_BTNRelevantData(T, N);
+    m_nextIndex += memorySize;
+
+    setNextIndex(m_nextIndex);
 
     return index;
 }
 
-template <typename T, int N>
-inline std::size_t BTree<T, N>::getRootIndex()
+template <typename PKT, int BTreeOrder>
+inline std::size_t Table<PKT, BTreeOrder>::getRootIndex()
 {
     std::size_t rootIndex {};
     char* buffer = reinterpret_cast<char*>(&rootIndex);
@@ -585,8 +635,30 @@ inline std::size_t BTree<T, N>::getRootIndex()
     return rootIndex;
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::setRootIndex(const std::size_t index)
+template <typename PKT, int BTreeOrder>
+inline std::size_t Table<PKT, BTreeOrder>::getNextIndex()
+{
+    std::size_t nextIndex {};
+    char* buffer = reinterpret_cast<char*>(&nextIndex);
+
+    m_file.seekg(sizeof(std::size_t), std::ios::beg);
+    m_file.read(buffer, sizeof(std::size_t));
+    return nextIndex;
+}
+
+template <typename PKT, int BTreeOrder>
+inline std::size_t Table<PKT, BTreeOrder>::getRecordSize()
+{
+    std::size_t recordSize {};
+    char* buffer = reinterpret_cast<char*>(&recordSize);
+
+    m_file.seekg(sizeof(std::size_t) * 2, std::ios::beg);
+    m_file.read(buffer, sizeof(std::size_t));
+    return recordSize;
+}
+
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::setRootIndex(const std::size_t index)
 {
     const char* buffer = reinterpret_cast<const char*>(&index);
 
@@ -594,8 +666,26 @@ inline void BTree<T, N>::setRootIndex(const std::size_t index)
     m_writeTarget->write(buffer, sizeof(std::size_t));
 }
 
-template <typename T, int N>
-inline void BTree<T, N>::setTransactionState(const char state)
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::setNextIndex(const std::size_t index)
+{
+    const char* buffer = reinterpret_cast<const char*>(&index);
+
+    m_writeTarget->seekp(sizeof(std::size_t), std::ios::beg);
+    m_writeTarget->write(buffer, sizeof(std::size_t));
+}
+
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::setRecordSize(const std::size_t size)
+{
+    const char* buffer = reinterpret_cast<const char*>(&size);
+
+    m_writeTarget->seekp(sizeof(std::size_t) * 2, std::ios::beg);
+    m_writeTarget->write(buffer, sizeof(std::size_t));
+}
+
+template <typename PKT, int BTreeOrder>
+inline void Table<PKT, BTreeOrder>::setTransactionState(const char state)
 {
     m_flagsFile.seekp(0, std::ios::beg);
     m_flagsFile.write(&state, sizeof(char));

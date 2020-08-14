@@ -29,10 +29,10 @@ inline std::string toString(const T& val)
     return std::to_string(val);
 }
 
-template <typename T>
-inline std::string toString(const AttachedPair<T>& ap)
+template <typename PKT>
+inline std::string toString(const AttachedPair<PKT>& ap)
 {
-    return std::to_string(ap.pk) + ": " + std::to_string(ap.body);
+    return std::to_string(ap.pk);
 }
 
 } // namespace mav

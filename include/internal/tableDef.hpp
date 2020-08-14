@@ -21,41 +21,26 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_NODE_HPP
-#define MAVeD_NODE_HPP
+#ifndef MAVeD_TABLE_DEF_HPP
+#define MAVeD_TABLE_DEF_HPP
 
-#include <core/common.hpp>
-#include <core/utils.hpp>
-#include <core/attachedPair.hpp>
+#include <internal/tuple3.hpp>
 
+#include <vector>
 #include <string>
-
-//#define sizeof_BTNRelevantData(PKT, BTreeOrder) offsetof(unparentheses_type((Node<PKT, BTreeOrder>)), children)
-#define offsetAs(PKT, BTreeOrder, param) offsetof(unparentheses_type((Node<PKT, BTreeOrder>)), param)
 
 namespace mav
 {
-template <typename PKT, int BTreeOrder>
-struct Node
+class TableDef
 {
 public:
-    // Relevant Data
-    // -------------
-    AttachedPair<PKT> data[BTreeOrder - 1];
-    std::size_t size;
+    TableDef() : recordSize {}, columnsDef{} {}
+    ~TableDef() {}
 
-    std::size_t index;
-    std::size_t childrenIndices[BTreeOrder];
-
-    bool isLeaf;
-    // -------------
-
-    Node<PKT, BTreeOrder>* children[BTreeOrder];
-    std::string label;
+    std::size_t recordSize;
+    std::vector<Tuple3<std::string, std::size_t, std::size_t>> columnsDef;
 };
 
 } // namespace mav
 
-#include <core/node.inl>
-
-#endif // MAVeD_NODE_HPP
+#endif // MAVeD_TABLE_DEF_HPP

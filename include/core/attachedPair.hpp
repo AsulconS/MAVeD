@@ -25,15 +25,16 @@
 #define MAVeD_ATTACHED_PAIR_HPP
 
 #include <core/common.hpp>
+#include <internal/record.hpp>
 
 namespace mav
 {
-template <typename T>
+template <typename PKT>
 struct AttachedPair
 {
 public:
-    int pk;
-    T body;
+    PKT pk;
+    Record body;
 };
 
 } // namespace mav

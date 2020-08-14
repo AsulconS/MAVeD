@@ -21,8 +21,8 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_BTREE_HPP
-#define MAVeD_BTREE_HPP
+#ifndef MAVeD_TABLE_HPP
+#define MAVeD_TABLE_HPP
 
 #include <core/common.hpp>
 #include <core/time.hpp>
@@ -33,6 +33,8 @@
 
 #include <dstr/stack.hpp>
 
+#include <internal/tableDef.hpp>
+
 #include <queue>
 #include <unordered_map>
 
@@ -42,31 +44,31 @@
 
 namespace mav
 {
-template <typename T, int N>
-class BTree
+template <typename PKT, int BTreeOrder = 4>
+class Table
 {
-    using BNode = Node<T, N>;
+    using BNode = Node<PKT, BTreeOrder>;
 
 public:
-    BTree();
-    BTree(BNode* t_root);
-    BTree(const std::vector<AttachedPair<T>>& data);
-    BTree(const std::initializer_list<AttachedPair<T>>& l);
-    virtual ~BTree();
+    Table();
+    Table(BNode* t_root, const std::size_t recordSize);
+    Table(const std::vector<AttachedPair<PKT>>& data, const std::size_t recordSize);
+    Table(const std::initializer_list<AttachedPair<PKT>>& l, const std::size_t recordSize);
+    virtual ~Table();
 
     void makeEmpty();
     void makeEmpty(BNode* root);
 
-    virtual BNode* find(const AttachedPair<T>& value, int& index);
-    virtual BNode* find(const AttachedPair<T>& value, BNode*& root, int& index);
+    virtual BNode* find(const AttachedPair<PKT>& value, int& index);
+    virtual BNode* find(const AttachedPair<PKT>& value, BNode*& root, int& index);
 
-    virtual void insertKey(const AttachedPair<T>& value);
-    virtual void insertKey(const AttachedPair<T>& value, BNode*& root);
+    virtual void insertKey(const AttachedPair<PKT>& value);
+    virtual void insertKey(const AttachedPair<PKT>& value, BNode*& root);
 
     virtual void updateKey(const BNode* node);
 
-    virtual void deleteKey(const AttachedPair<T>& value);
-    virtual void deleteKey(const AttachedPair<T>& value, BNode*& root);
+    virtual void deleteKey(const AttachedPair<PKT>& value);
+    virtual void deleteKey(const AttachedPair<PKT>& value, BNode*& root);
 
     void loadAll();
     void loadAll(BNode*& root);
@@ -81,19 +83,26 @@ protected:
     virtual void labelNode(BNode* node);
 
     void splitChild(BNode* node, const std::size_t index);
-    void insertKeyNonFull(const AttachedPair<T>& value, BNode*& root);
+    void insertKeyNonFull(const AttachedPair<PKT>& value, BNode*& root);
 
     void clearFile();
     void createFileIfNotExists();
 
+    // In-Storage Functions
+    // ----------------------------------------------------
     void diskWrite(const BNode* node);
     void diskRead(BNode*& node, const std::size_t index);
 
     std::size_t allocate();
     std::size_t getRootIndex();
+    std::size_t getNextIndex();
+    std::size_t getRecordSize();
 
     void setRootIndex(const std::size_t index);
+    void setNextIndex(const std::size_t index);
+    void setRecordSize(const std::size_t size);
     void setTransactionState(const char state);
+    // ----------------------------------------------------
 
     BNode* m_root;
     Stack<BNode*> m_nodes;
@@ -102,6 +111,8 @@ protected:
     std::fstream m_flagsFile;
 
     std::fstream* m_writeTarget;
+
+    TableDef m_tableDef;
 
     bool m_lockPhase;
     std::unordered_map<int, std::queue<std::pair<char, int>>> m_lockTable;
@@ -112,11 +123,11 @@ protected:
     uint32 m_filesCount;
 
 private:
-    constexpr const char* thisName() { return "BTree"; };
+    constexpr const char* thisName() { return "MAVeD-Table"; };
 };
 
 } // namespace mav
 
-#include <dstr/BTree.inl>
+#include <dstr/table.inl>
 
-#endif // MAVeD_BTREE_HPP
+#endif // MAVeD_TABLE_HPP

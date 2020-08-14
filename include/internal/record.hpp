@@ -21,41 +21,21 @@
  *                                                                              *
  ********************************************************************************/
 
-#ifndef MAVeD_NODE_HPP
-#define MAVeD_NODE_HPP
+#ifndef MAVeD_RECORD_HPP
+#define MAVeD_RECORD_HPP
 
 #include <core/common.hpp>
-#include <core/utils.hpp>
-#include <core/attachedPair.hpp>
-
-#include <string>
-
-//#define sizeof_BTNRelevantData(PKT, BTreeOrder) offsetof(unparentheses_type((Node<PKT, BTreeOrder>)), children)
-#define offsetAs(PKT, BTreeOrder, param) offsetof(unparentheses_type((Node<PKT, BTreeOrder>)), param)
 
 namespace mav
 {
-template <typename PKT, int BTreeOrder>
-struct Node
+struct Record
 {
-public:
-    // Relevant Data
-    // -------------
-    AttachedPair<PKT> data[BTreeOrder - 1];
+    char* data;
     std::size_t size;
-
-    std::size_t index;
-    std::size_t childrenIndices[BTreeOrder];
-
-    bool isLeaf;
-    // -------------
-
-    Node<PKT, BTreeOrder>* children[BTreeOrder];
-    std::string label;
 };
 
 } // namespace mav
 
-#include <core/node.inl>
+#include <core/attachedPair.inl>
 
-#endif // MAVeD_NODE_HPP
+#endif // MAVeD_RECORD_HPP

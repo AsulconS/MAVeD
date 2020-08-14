@@ -25,13 +25,13 @@
 
 int main()
 {
-    mav::BTree<int, 4> bTree {};
+    mav::Table<int> table {};
 
     int index {};
-    bTree.find({361, 18}, index);
+    table.find({361, 18}, index);
 
-    bTree.exportToFile("Path B-Tree");
-    bTree.exportToFile("Final B-Tree", true);
+    table.exportToFile("Path B-Tree");
+    table.exportToFile("Final B-Tree", true);
 
     return 0;
 }

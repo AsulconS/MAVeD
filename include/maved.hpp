@@ -29,6 +29,6 @@
 #include <core/node.hpp>
 #include <core/strCast.hpp>
 
-#include <dstr/BTree.hpp>
+#include <dstr/table.hpp>
 
 #endif // MAVeD_HPP
